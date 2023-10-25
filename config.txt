@@ -12,24 +12,28 @@
 # Enable 64-bit support
 arm_64bit=1
 
-# We always use the same names. The variant is selected in fwup.conf.
-start_file=start.elf
-fixup_file=fixup.dat
+dtparam=i2c_arm=on
+dtparam=i2s=on
+dtparam=spi=on
+
+# Enable audio (loads snd_bcm2835)
+dtparam=audio=on
 
 # Disable the boot rainbow
 disable_splash=1
 
-# This, along with the Raspberry Pi "x" firmware is needed for the camera
-# to work. The Raspberry Pi "x" firmware is selected via the Buildroot
-# configuration. See Target packages->Hardware handling->Firmware.
-gpu_mem=192
+# We always use the same names on nerves.
+# The variant is selected in fwup.conf.
+start_file=start.elf
+fixup_file=fixup.dat
 
-# Enable I2C and SPI
-dtparam=i2c_arm=on
-dtparam=spi=on
+# Higher GPU memory along with the Raspberry Pi "x" firmware is needed for the camera to work.
+# The Raspberry Pi "x" firmware is fetched via the Buildroot configuration (see Target packages->Hardware handling->Firmware)
+# and selected in fwup.conf (see note on start_file above).
+#gpu_mem=192
 
-# Enable audio (loads snd_bcm3825)
-dtparam=audio=on
+# 16MB GPU mem is only available in the cutdown firmware (_cd.elf).
+gpu_mem=16
 
 # Automatically load overlays for detected cameras
 camera_auto_detect=1
@@ -37,9 +41,22 @@ camera_auto_detect=1
 # Automatically load overlays for detected DSI displays
 display_auto_detect=1
 
-# Enable DRM VC4 V3D driver - but don't use default 256MB CMA size
-dtoverlay=vc4-kms-v3d,cma-128
+# Enable DRM VC4 V3D driver - but don't use default 256MB CMA size.
+# Setting cma-size to 0 results in an 8MB CMA, the lowest we can go.
+dtoverlay=vc4-kms-v3d,cma-size=0x0000000
+
+# We need a second framebuffer for the screen.
 max_framebuffers=2
+
+# Don't have the firmware create an initial video= setting in cmdline.txt.
+# Use the kernel's default instead.
+disable_fw_kms_setup=1
+
+# Disable compensation for displays with overscan
+disable_overscan=1
+
+# Run as fast as firmware / board allows (pi4+).
+arm_boost=1
 
 # Comment this in or modify to enable OneWire
 # NOTE: check that the overlay that you specify is in the boot partition or
@@ -47,16 +64,18 @@ max_framebuffers=2
 #dtoverlay=w1-gpio-pullup,gpiopin=4
 
 # Support USB gadget mode on the USB-C port
-dtoverlay=dwc2
+dtoverlay=dwc2,dr_mode=peripheral
 
 # The ramoops overlay works with the pstore driver to preserve crash
 # information across reboots in DRAM. Base address is 64KB before 64MB.
 dtoverlay=ramoops,base-addr=0x3FF0000,console-size=0x4000,record-size=0x4000
 
-# Enable the UART (/dev/ttyAMA0) on the RPi3.
+# Speed boost for 30 seconds (60 max) until cpu frequency is set.
+initial_turbo=30
+
+# Enable UART on GPIO.
+This is the slow (miniuart) one unless bluetooth is disabled.
 enable_uart=1
-dtoverlay=miniuart-bt
-# Set the GPU frequency so that the MiniUART (/dev/ttyS0) can be used for
-# Bluetooth. This has a small performance impact. See
-# https://www.raspberrypi.org/documentation/computers/config_txt.html#overclocking.
-core_freq=250
+
+dtoverlay=sharp-drm
+dtoverlay=beepy-kbd,irq_pin=4

@@ -2,3 +2,11 @@
 #
 # If these are non-proprietary, please consider contributing them back to
 # Nerves or Buildroot.
+
+menu "Custom Packages"
+
+source "$NERVES_DEFCONFIG_DIR/packages/beepy-kbd/Config.in"
+source "$NERVES_DEFCONFIG_DIR/packages/sharp-drm/Config.in"
+
+endmenu
+
